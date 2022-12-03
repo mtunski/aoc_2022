@@ -1,0 +1,191 @@
+# Advent of Code 2022
+
+```elixir
+Mix.install([
+  {:memoize, "~> 1.4"},
+  {:tesla, "~> 1.4"},
+  {:hackney, "~> 1.18"}
+])
+
+defmodule Api do
+  use Tesla
+  use Memoize
+
+  @session ""
+
+  adapter(Tesla.Adapter.Hackney)
+
+  plug(Tesla.Middleware.BaseUrl, "https://adventofcode.com/2022/day/")
+
+  plug(Tesla.Middleware.Headers, [
+    {"cookie", "session=#{@session}"}
+  ])
+
+  defmemo get_input(day) do
+    IO.inspect("Requesting day #{day} input...")
+    {:ok, response} = get("#{day}/input")
+    response.body
+  end
+end
+```
+
+## Task 1
+
+```elixir
+test_input = """
+1000
+2000
+3000
+
+4000
+
+5000
+6000
+
+7000
+8000
+9000
+
+10000
+"""
+
+solve1 = fn input ->
+  input
+  |> String.split("\n\n")
+  |> Enum.map(fn cals ->
+    cals |> String.split("\n", trim: true) |> Enum.map(&String.to_integer/1) |> Enum.sum()
+  end)
+  |> Enum.max()
+end
+
+24000 = solve1.(test_input)
+solve1.(Api.get_input(1)) |> IO.inspect(label: "1.1")
+
+solve2 = fn input ->
+  input
+  |> String.split("\n\n")
+  |> Enum.map(fn cals ->
+    cals |> String.split("\n", trim: true) |> Enum.map(&String.to_integer/1) |> Enum.sum()
+  end)
+  |> Enum.sort(&>=/2)
+  |> Enum.take(3)
+  |> Enum.sum()
+end
+
+45000 = solve2.(test_input)
+solve2.(Api.get_input(1)) |> IO.inspect(label: "1.2")
+
+:ok
+```
+
+## Task 2
+
+```elixir
+test_input = """
+A Y
+B X
+C Z
+"""
+
+solve1 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn round ->
+    String.split(round, " ")
+    |> case do
+      ["A", "X"] -> 1 + 3
+      ["A", "Y"] -> 2 + 6
+      ["A", "Z"] -> 3 + 0
+      ["B", "X"] -> 1 + 0
+      ["B", "Y"] -> 2 + 3
+      ["B", "Z"] -> 3 + 6
+      ["C", "X"] -> 1 + 6
+      ["C", "Y"] -> 2 + 0
+      ["C", "Z"] -> 3 + 3
+    end
+  end)
+  |> Enum.sum()
+end
+
+15 = solve1.(test_input)
+solve1.(Api.get_input(2)) |> IO.inspect(label: "2.1")
+
+solve2 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn round ->
+    String.split(round, " ")
+    |> case do
+      ["A", "X"] -> 3 + 0
+      ["A", "Y"] -> 1 + 3
+      ["A", "Z"] -> 2 + 6
+      ["B", "X"] -> 1 + 0
+      ["B", "Y"] -> 2 + 3
+      ["B", "Z"] -> 3 + 6
+      ["C", "X"] -> 2 + 0
+      ["C", "Y"] -> 3 + 3
+      ["C", "Z"] -> 1 + 6
+    end
+  end)
+  |> Enum.sum()
+end
+
+12 = solve2.(test_input)
+solve2.(Api.get_input(2)) |> IO.inspect(label: "2.2")
+```
+
+## Task 3
+
+```elixir
+test_input = """
+vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg
+wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+ttgJtRGJQctTZtZT
+CrZsJsPPZsGzwwsLwLmpwMDw
+"""
+
+priorities =
+  (Enum.map(?a..?z, fn x -> <<x::utf8>> end) ++
+     Enum.map(?A..?Z, fn x -> <<x::utf8>> end))
+  |> Enum.with_index(1)
+  |> Enum.into(%{})
+
+solve1 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn rucksack ->
+    [first_half, second_half] =
+      rucksack
+      |> String.split_at(trunc(String.length(rucksack) / 2))
+      |> Tuple.to_list()
+      |> Enum.map(&String.split(&1, "", trim: true))
+
+    common = Enum.find(first_half, &(&1 in second_half))
+
+    Map.get(priorities, common)
+  end)
+  |> Enum.sum()
+end
+
+157 = solve1.(test_input)
+solve1.(Api.get_input(3)) |> IO.inspect(label: "3.1")
+
+solve2 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.chunk_every(3)
+  |> Enum.map(fn rucksacks ->
+    [first, second, third] = rucksacks |> Enum.map(&String.split(&1, "", trim: true))
+
+    common = Enum.find(first, &(&1 in second and &1 in third))
+
+    Map.get(priorities, common)
+  end)
+  |> Enum.sum()
+end
+
+70 = solve2.(test_input)
+solve2.(Api.get_input(3)) |> IO.inspect(label: "3.2")
+```
