@@ -11,7 +11,7 @@ defmodule Api do
   use Tesla
   use Memoize
 
-  @session ""
+  @session System.get_env("AOC_SESSION")
 
   adapter(Tesla.Adapter.Hackney)
 
@@ -27,6 +27,8 @@ defmodule Api do
     response.body
   end
 end
+
+:ok
 ```
 
 ## Task 1
@@ -132,6 +134,8 @@ end
 
 12 = solve2.(test_input)
 solve2.(Api.get_input(2)) |> IO.inspect(label: "2.2")
+
+:ok
 ```
 
 ## Task 3
@@ -188,4 +192,66 @@ end
 
 70 = solve2.(test_input)
 solve2.(Api.get_input(3)) |> IO.inspect(label: "3.2")
+
+:ok
+```
+
+## Task 4
+
+```elixir
+test_input = """
+2-4,6-8
+2-3,4-5
+5-7,7-9
+2-8,3-7
+6-6,4-6
+2-6,4-8
+"""
+
+solve1 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn pair_assignments ->
+    pair_assignments
+    |> String.split(",")
+    |> Enum.map(fn elf ->
+      elf
+      |> String.split("-")
+      |> Enum.map(&String.to_integer/1)
+      |> then(fn [first, last] -> Range.new(first, last) |> Enum.to_list() |> MapSet.new() end)
+    end)
+    |> then(fn [first_elf_assignments, second_elf_assignments] ->
+      MapSet.subset?(first_elf_assignments, second_elf_assignments) or
+        MapSet.subset?(second_elf_assignments, first_elf_assignments)
+    end)
+  end)
+  |> Enum.count(& &1)
+end
+
+2 = solve1.(test_input)
+solve1.(Api.get_input(4)) |> IO.inspect(label: "4.1")
+
+solve2 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn pair_assignments ->
+    pair_assignments
+    |> String.split(",")
+    |> Enum.map(fn elf ->
+      elf
+      |> String.split("-")
+      |> Enum.map(&String.to_integer/1)
+      |> then(fn [first, last] -> Range.new(first, last) end)
+    end)
+    |> then(fn [first_elf_assignments, second_elf_assignments] ->
+      Range.disjoint?(first_elf_assignments, second_elf_assignments)
+    end)
+  end)
+  |> Enum.count(&(!&1))
+end
+
+4 = solve2.(test_input)
+solve2.(Api.get_input(4)) |> IO.inspect(label: "4.2")
+
+:ok
 ```
