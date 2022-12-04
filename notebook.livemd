@@ -16,13 +16,9 @@ defmodule Api do
   adapter(Tesla.Adapter.Hackney)
 
   plug(Tesla.Middleware.BaseUrl, "https://adventofcode.com/2022/day/")
-
-  plug(Tesla.Middleware.Headers, [
-    {"cookie", "session=#{@session}"}
-  ])
+  plug(Tesla.Middleware.Headers, [{"cookie", "session=#{@session}"}])
 
   defmemo get_input(day) do
-    IO.inspect("Requesting day #{day} input...")
     {:ok, response} = get("#{day}/input")
     response.body
   end
@@ -151,8 +147,8 @@ CrZsJsPPZsGzwwsLwLmpwMDw
 """
 
 priorities =
-  (Enum.map(?a..?z, fn x -> <<x::utf8>> end) ++
-     Enum.map(?A..?Z, fn x -> <<x::utf8>> end))
+  [?a..?z, ?A..?Z]
+  |> Enum.flat_map(fn chars -> Enum.map(chars, &<<&1::utf8>>) end)
   |> Enum.with_index(1)
   |> Enum.into(%{})
 
@@ -160,15 +156,14 @@ solve1 = fn input ->
   input
   |> String.split("\n", trim: true)
   |> Enum.map(fn rucksack ->
-    [first_half, second_half] =
-      rucksack
-      |> String.split_at(div(String.length(rucksack), 2))
-      |> Tuple.to_list()
-      |> Enum.map(&(&1 |> String.split("", trim: true) |> MapSet.new()))
-
-    [common] = MapSet.intersection(first_half, second_half) |> MapSet.to_list()
-
-    Map.get(priorities, common)
+    with [first_half, second_half] <-
+           rucksack
+           |> String.split_at(div(String.length(rucksack), 2))
+           |> Tuple.to_list()
+           |> Enum.map(&(&1 |> String.split("", trim: true) |> MapSet.new())),
+         [common] <- MapSet.intersection(first_half, second_half) |> MapSet.to_list() do
+      Map.get(priorities, common)
+    end
   end)
   |> Enum.sum()
 end
@@ -181,13 +176,12 @@ solve2 = fn input ->
   |> String.split("\n", trim: true)
   |> Enum.chunk_every(3)
   |> Enum.map(fn rucksacks ->
-    [first, second, third] =
-      Enum.map(rucksacks, &(&1 |> String.split("", trim: true) |> MapSet.new()))
-
-    [common] =
-      first |> MapSet.intersection(second) |> MapSet.intersection(third) |> MapSet.to_list()
-
-    Map.get(priorities, common)
+    with [first, second, third] <-
+           Enum.map(rucksacks, &(&1 |> String.split("", trim: true) |> MapSet.new())),
+         [common] <-
+           first |> MapSet.intersection(second) |> MapSet.intersection(third) |> MapSet.to_list() do
+      Map.get(priorities, common)
+    end
   end)
   |> Enum.sum()
 end
