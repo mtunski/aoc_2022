@@ -162,11 +162,11 @@ solve1 = fn input ->
   |> Enum.map(fn rucksack ->
     [first_half, second_half] =
       rucksack
-      |> String.split_at(trunc(String.length(rucksack) / 2))
+      |> String.split_at(div(String.length(rucksack), 2))
       |> Tuple.to_list()
-      |> Enum.map(&String.split(&1, "", trim: true))
+      |> Enum.map(&(&1 |> String.split("", trim: true) |> MapSet.new()))
 
-    common = Enum.find(first_half, &(&1 in second_half))
+    [common] = MapSet.intersection(first_half, second_half) |> MapSet.to_list()
 
     Map.get(priorities, common)
   end)
@@ -181,9 +181,11 @@ solve2 = fn input ->
   |> String.split("\n", trim: true)
   |> Enum.chunk_every(3)
   |> Enum.map(fn rucksacks ->
-    [first, second, third] = rucksacks |> Enum.map(&String.split(&1, "", trim: true))
+    [first, second, third] =
+      Enum.map(rucksacks, &(&1 |> String.split("", trim: true) |> MapSet.new()))
 
-    common = Enum.find(first, &(&1 in second and &1 in third))
+    [common] =
+      first |> MapSet.intersection(second) |> MapSet.intersection(third) |> MapSet.to_list()
 
     Map.get(priorities, common)
   end)
