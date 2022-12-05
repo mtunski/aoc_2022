@@ -251,3 +251,87 @@ solve2.(Api.get_input(4)) |> IO.inspect(label: "4.2")
 
 :ok
 ```
+
+## Task 5
+
+```elixir
+test_input = """
+    [D]    
+[N] [C]    
+[Z] [M] [P]
+ 1   2   3 
+
+move 1 from 2 to 1
+move 3 from 1 to 3
+move 2 from 2 to 1
+move 1 from 1 to 2
+"""
+
+parse_input = fn input ->
+  with [stacks_input, moves_input] <- input |> String.split("\n\n", trim: true),
+       stacks <-
+         stacks_input
+         |> String.split("\n", trim: true)
+         |> Enum.flat_map(
+           &(&1
+             |> String.split("", trim: true)
+             |> Enum.with_index()
+             |> Enum.filter(fn {c, _} -> c =~ ~r/[A-Z]/ end))
+         )
+         |> Enum.group_by(fn {_, i} -> i end, fn {c, _} -> c end)
+         |> Map.values()
+         |> Enum.map(&Enum.reverse/1)
+         |> Enum.with_index(1)
+         |> Enum.into(%{}, fn {stack, index} -> {index, stack} end),
+       moves <-
+         moves_input
+         |> String.split("\n", trim: true)
+         |> Enum.map(
+           &(~r/\d+/
+             |> Regex.scan(&1)
+             |> Enum.map(fn [v] -> String.to_integer(v) end))
+         ) do
+    {stacks, moves}
+  end
+end
+
+solve1 = fn input ->
+  {input_stacks, moves} = parse_input.(input)
+
+  moves
+  |> Enum.reduce(input_stacks, fn [count, from, to], stacks ->
+    {crates_left, crates_to_move} = Enum.split(stacks[from], -count)
+
+    stacks
+    |> Map.put(from, crates_left)
+    |> Map.update!(to, &(&1 ++ Enum.reverse(crates_to_move)))
+  end)
+  |> Map.values()
+  |> Enum.map(&List.last/1)
+  |> Enum.join()
+end
+
+"CMZ" = solve1.(test_input)
+solve1.(Api.get_input(5)) |> IO.inspect(label: "5.1")
+
+solve2 = fn input ->
+  {input_stacks, moves} = parse_input.(input)
+
+  moves
+  |> Enum.reduce(input_stacks, fn [count, from, to], stack ->
+    {crates_left, crates_to_move} = Enum.split(stack[from], -count)
+
+    stack
+    |> Map.put(from, crates_left)
+    |> Map.update!(to, &(&1 ++ crates_to_move))
+  end)
+  |> Map.values()
+  |> Enum.map(&List.last/1)
+  |> Enum.join()
+end
+
+"MCD" = solve2.(test_input)
+solve2.(Api.get_input(5)) |> IO.inspect(label: "5.2")
+
+:ok
+```
