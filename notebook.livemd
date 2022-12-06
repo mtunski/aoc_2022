@@ -335,3 +335,30 @@ solve2.(Api.get_input(5)) |> IO.inspect(label: "5.2")
 
 :ok
 ```
+
+## Task 6
+
+```elixir
+test_inputs = [
+  "mjqjpqmgbljsphdztnvjfqwrcgsmlb",
+  "bvwbjplbgvbhsrlpgdmjqwftvncz",
+  "nppdvjthqldpwncqszvftbrmjlhg",
+  "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg",
+  "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"
+]
+
+solve = fn input, marker_length ->
+  input
+  |> String.to_charlist()
+  |> Stream.chunk_every(marker_length, 1)
+  |> Stream.take_while(&(&1 |> Enum.uniq() |> length() != marker_length))
+  |> Enum.count()
+  |> Kernel.+(marker_length)
+end
+
+[7, 5, 6, 10, 11] = Enum.map(test_inputs, &solve.(&1, 4))
+solve.(Api.get_input(6), 4) |> IO.inspect(label: "6.1")
+
+[19, 23, 23, 29, 26] = Enum.map(test_inputs, &solve.(&1, 14))
+solve.(Api.get_input(6), 14) |> IO.inspect(label: "6.2")
+```
