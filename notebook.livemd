@@ -362,3 +362,107 @@ solve.(Api.get_input(6), 4) |> IO.inspect(label: "6.1")
 [19, 23, 23, 29, 26] = Enum.map(test_inputs, &solve.(&1, 14))
 solve.(Api.get_input(6), 14) |> IO.inspect(label: "6.2")
 ```
+
+## Task 7
+
+```elixir
+test_input = """
+$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k
+"""
+
+solve1 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.reduce({[], %{}}, fn
+    "$ cd ..", {dir_stack, sizes} ->
+      {tl(dir_stack), sizes}
+
+    "$ cd " <> dir, {dir_stack, sizes} ->
+      uuid = :crypto.strong_rand_bytes(32) |> Base.url_encode64() |> binary_part(0, 32)
+      {["#{dir}::#{uuid}" | dir_stack], sizes}
+
+    command, {dir_stack, sizes} ->
+      command
+      |> Integer.parse()
+      |> case do
+        {size, _} ->
+          {dir_stack,
+           dir_stack
+           |> Enum.into(%{}, fn dir -> {dir, size} end)
+           |> Map.merge(sizes, fn _k, v1, v2 -> v1 + v2 end)}
+
+        _ ->
+          {dir_stack, sizes}
+      end
+  end)
+  |> elem(1)
+  |> Enum.filter(fn {_, size} -> size <= 100_000 end)
+  |> Enum.map(&elem(&1, 1))
+  |> Enum.sum()
+end
+
+95437 = solve1.(test_input)
+solve1.(Api.get_input(7)) |> IO.inspect(label: "7.1")
+
+solve2 = fn input ->
+  input
+  |> String.split("\n", trim: true)
+  |> Enum.reduce({[], %{}}, fn
+    "$ cd ..", {dir_stack, sizes} ->
+      {tl(dir_stack), sizes}
+
+    "$ cd " <> dir, {dir_stack, sizes} ->
+      uuid = :crypto.strong_rand_bytes(32) |> Base.url_encode64() |> binary_part(0, 32)
+      {["#{dir}::#{uuid}" | dir_stack], sizes}
+
+    command, {dir_stack, sizes} ->
+      command
+      |> Integer.parse()
+      |> case do
+        {size, _} ->
+          {dir_stack,
+           dir_stack
+           |> Enum.into(%{}, fn dir -> {dir, size} end)
+           |> Map.merge(sizes, fn _k, v1, v2 -> v1 + v2 end)}
+
+        _ ->
+          {dir_stack, sizes}
+      end
+  end)
+  |> elem(1)
+  |> Enum.sort_by(fn {_, size} -> -size end)
+  |> then(fn [{_, all} | rest] ->
+    rest
+    |> Enum.reverse()
+    |> Enum.find(fn {_, size} -> 70_000_000 - all + size > 30_000_000 end)
+    |> elem(1)
+  end)
+end
+
+24_933_642 = solve2.(test_input)
+solve2.(Api.get_input(7)) |> IO.inspect(label: "7.2")
+
+:ok
+```
