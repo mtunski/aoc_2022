@@ -466,3 +466,79 @@ solve2.(Api.get_input(7)) |> IO.inspect(label: "7.2")
 
 :ok
 ```
+
+## Task 8
+
+```elixir
+test_input = """
+30373
+25512
+65332
+33549
+35390
+"""
+
+solve1 = fn input ->
+  with trees_rows <- String.split(input, "\n", trim: true),
+       size <- length(trees_rows),
+       trees <-
+         trees_rows
+         |> Enum.flat_map(fn row ->
+           row |> String.split("", trim: true) |> Enum.map(&String.to_integer/1)
+         end)
+         |> Enum.with_index() do
+    trees
+    |> Enum.map(fn {curr_height, curr_idx} ->
+      row_idx = trunc(curr_idx / size)
+      col_idx = rem(curr_idx, size)
+      top = Enum.slice(trees, col_idx..curr_idx//size) |> Enum.reverse() |> tl
+      left = Enum.slice(trees, (row_idx * size)..curr_idx) |> Enum.reverse() |> tl
+      right = Enum.slice(trees, curr_idx..(row_idx * size + size - 1)) |> tl
+      bottom = Enum.slice(trees, curr_idx..(size * size)//size) |> tl
+
+      Enum.any?([top, left, right, bottom], fn trees_slice ->
+        trees_slice == [] || Enum.all?(trees_slice, &(elem(&1, 0) < curr_height))
+      end)
+    end)
+    |> Enum.count(& &1)
+  end
+end
+
+21 = solve1.(test_input)
+solve1.(Api.get_input(8)) |> IO.inspect(label: "8.1")
+
+solve2 = fn input ->
+  with trees_rows <- String.split(input, "\n", trim: true),
+       size <- length(trees_rows),
+       trees <-
+         trees_rows
+         |> Enum.flat_map(fn row ->
+           row |> String.split("", trim: true) |> Enum.map(&String.to_integer/1)
+         end)
+         |> Enum.with_index() do
+    trees
+    |> Enum.map(fn {curr_height, curr_idx} ->
+      row_idx = trunc(curr_idx / size)
+      col_idx = rem(curr_idx, size)
+      top = Enum.slice(trees, col_idx..curr_idx//size) |> Enum.reverse() |> tl
+      left = Enum.slice(trees, (row_idx * size)..curr_idx) |> Enum.reverse() |> tl
+      right = Enum.slice(trees, curr_idx..(row_idx * size + size - 1)) |> tl
+      bottom = Enum.slice(trees, curr_idx..(size * size)//size) |> tl
+
+      Enum.map([top, left, right, bottom], fn trees_slice ->
+        Enum.reduce_while(trees_slice, 0, fn
+          {height, _}, score when height >= curr_height -> {:halt, score + 1}
+          _, score -> {:cont, score + 1}
+        end)
+      end)
+      |> Enum.product()
+    end)
+    |> Enum.max()
+  end
+end
+
+8 = solve2.(test_input)
+solve2.(Api.get_input(8)) |> IO.inspect(label: "8.2")
+
+:ok
+```
