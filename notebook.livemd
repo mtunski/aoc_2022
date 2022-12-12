@@ -542,3 +542,83 @@ solve2.(Api.get_input(8)) |> IO.inspect(label: "8.2")
 
 :ok
 ```
+
+## Task 9
+
+```elixir
+defmodule Task9 do
+  def solve1(input) do
+    input
+    |> parse_input
+    |> Enum.reduce(
+      [{0, 0}, {0, 0}, MapSet.new([{0, 0}])],
+      fn step, [head, tail, tail_positions] ->
+        new_head = move_head(head, step)
+        new_tail = move_tail(new_head, tail, step)
+        [new_head, new_tail, MapSet.put(tail_positions, new_tail)]
+      end
+    )
+    |> then(fn [_, _, tail_positions] -> Enum.count(tail_positions) end)
+  end
+
+  defp parse_input(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.flat_map(
+      &(&1
+        |> String.split(" ")
+        |> then(fn [direction, count] ->
+          List.duplicate(direction, String.to_integer(count))
+        end))
+    )
+  end
+
+  defp move_head({x, y}, "R"), do: {x + 1, y}
+  defp move_head({x, y}, "U"), do: {x, y + 1}
+  defp move_head({x, y}, "L"), do: {x - 1, y}
+  defp move_head({x, y}, "D"), do: {x, y - 1}
+
+  defp move_tail({h_x, h_y} = _head, {t_x, t_y} = tail, step) do
+    cond do
+      t_x == h_x and t_y - h_y == 2 ->
+        {t_x, t_y - 1}
+
+      t_y == h_y and h_x - t_x == 2 ->
+        {t_x + 1, t_y}
+
+      t_x == h_x and h_y - t_y == 2 ->
+        {t_x, t_y + 1}
+
+      t_y == h_y and t_x - h_x == 2 ->
+        {t_x - 1, t_y}
+
+      t_y - h_y == 2 or h_x - t_x == 2 or h_y - t_y == 2 or t_x - h_x == 2 ->
+        case step do
+          "R" -> {h_x - 1, h_y}
+          "U" -> {h_x, h_y - 1}
+          "L" -> {h_x + 1, h_y}
+          "D" -> {h_x, h_y + 1}
+        end
+
+      true ->
+        tail
+    end
+  end
+end
+
+test_input = """
+R 4
+U 4
+L 3
+D 1
+R 4
+D 1
+L 5
+R 2
+"""
+
+13 = Task9.solve1(test_input)
+Task9.solve1(Api.get_input(9)) |> IO.inspect(label: "9.1")
+
+:ok
+```
